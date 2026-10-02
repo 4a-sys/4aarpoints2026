@@ -1,0 +1,1166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AR Reading Race Track 🏁 | Goal: 70 Points</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome 6 Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Canvas Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- Google Fonts: Fredoka & Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Fredoka', 'Outfit', 'sans-serif'],
+                    },
+                    colors: {
+                        asphalt: '#1e293b',
+                        trackBorder: '#334155',
+                        finishGreen: '#10b981',
+                        goldLeader: '#f59e0b',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #0b1329;
+            color: #f8fafc;
+            font-family: 'Fredoka', sans-serif;
+            user-select: none;
+            overflow-x: hidden;
+        }
+
+        /* Track Container Styling */
+        .asphalt-track-bg {
+            background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+            box-shadow: inset 0 0 25px rgba(0,0,0,0.8);
+        }
+
+        /* Lane heights ensuring cars sit clearly above names without overlap */
+        .race-lane {
+            position: relative;
+            height: 98px;
+            background: #1a233a;
+            border-bottom: 2px dashed rgba(255, 255, 255, 0.15);
+            transition: all 0.2s ease-in-out;
+        }
+
+        .race-lane-compact {
+            height: 80px;
+        }
+
+        .race-lane:hover {
+            background: #23304d;
+        }
+
+        /* Checkered Start & Finish Lines */
+        .checkered-pattern {
+            background-image: 
+                linear-gradient(45deg, #000 25%, transparent 25%), 
+                linear-gradient(-45deg, #000 25%, transparent 25%), 
+                linear-gradient(45deg, transparent 75%, #000 75%), 
+                linear-gradient(-45deg, transparent 75%, #000 75%);
+            background-size: 14px 14px;
+            background-position: 0 0, 0 7px, 7px -7px, -7px 0px;
+            background-color: #fff;
+        }
+
+        /* Car Unit Animation & Positioning */
+        .car-unit {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            transition: left 0.8s cubic-bezier(0.34, 1.4, 0.64, 1);
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Engine Vibration Animation */
+        .car-vibe {
+            animation: engineIdle 0.5s infinite alternate ease-in-out;
+        }
+
+        @keyframes engineIdle {
+            0% { transform: translateY(0px) rotate(0deg); }
+            100% { transform: translateY(-2px) rotate(0.6deg); }
+        }
+
+        .finish-glow {
+            border-color: #10b981 !important;
+            box-shadow: inset 0 0 20px rgba(16, 185, 129, 0.35), 0 0 15px rgba(16, 185, 129, 0.3);
+        }
+
+        /* Leader Podium Glow */
+        .champion-badge {
+            animation: crownPulse 1.6s infinite alternate;
+        }
+        @keyframes crownPulse {
+            from { transform: scale(1); filter: drop-shadow(0 0 4px #f59e0b); }
+            to { transform: scale(1.06); filter: drop-shadow(0 0 12px #fbbf24); }
+        }
+
+        /* Custom Scrollbars */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+            border-radius: 8px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #3b82f6;
+            border-radius: 8px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #60a5fa;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between p-3 sm:p-5">
+
+    <!-- Top Main Header Bar -->
+    <header id="main-header" class="max-w-7xl w-full mx-auto bg-slate-900/90 backdrop-blur-md p-4 rounded-2xl border border-slate-800 shadow-2xl mb-4 transition-all">
+        <div class="flex flex-col lg:flex-row items-center justify-between gap-4">
+            
+            <!-- Logo & Title -->
+            <div class="flex items-center gap-3 text-center lg:text-left">
+                <div class="bg-gradient-to-tr from-amber-500 via-orange-500 to-red-600 p-3 rounded-2xl shadow-lg shadow-orange-500/20 text-white">
+                    <i class="fa-solid fa-flag-checkered text-3xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl sm:text-3xl font-extrabold tracking-wide bg-gradient-to-r from-amber-400 via-orange-400 to-red-500 bg-clip-text text-transparent">
+                        AR Reading Race Track
+                    </h1>
+                    <p class="text-xs sm:text-sm text-slate-400 flex items-center gap-2 justify-center lg:justify-start">
+                        <span>Classroom Goal:</span>
+                        <span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2.5 py-0.5 rounded-full font-bold">70 AR Points</span>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Global Live Statistics -->
+            <div class="flex items-center gap-3 bg-slate-950/80 px-4 py-2 rounded-xl border border-slate-800 text-xs sm:text-sm">
+                <div class="text-center px-2.5 border-r border-slate-800">
+                    <span class="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Students</span>
+                    <span id="stat-students-count" class="font-extrabold text-amber-400 text-base">25</span>
+                </div>
+                <div class="text-center px-2.5 border-r border-slate-800">
+                    <span class="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Total Points</span>
+                    <span id="stat-total-points" class="font-extrabold text-emerald-400 text-base">0</span>
+                </div>
+                <div class="text-center px-2.5">
+                    <span class="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Finishers (70+)</span>
+                    <span id="stat-winners-count" class="font-extrabold text-cyan-400 text-base">0 🏆</span>
+                </div>
+            </div>
+
+            <!-- View Navigation & Projector Mode -->
+            <div class="flex items-center gap-2 flex-wrap justify-center">
+                <button id="btn-tab-track" onclick="switchTab('track')" 
+                    class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md">
+                    <i class="fa-solid fa-road"></i> Race Track
+                </button>
+                <button id="btn-tab-podium" onclick="switchTab('podium')" 
+                    class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 text-slate-400 hover:text-white hover:bg-slate-800">
+                    <i class="fa-solid fa-trophy"></i> Leaderboard
+                </button>
+                <button id="btn-tab-admin" onclick="switchTab('admin')" 
+                    class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 text-slate-400 hover:text-white hover:bg-slate-800">
+                    <i class="fa-solid fa-user-gear"></i> Teacher Panel
+                </button>
+                <button onclick="toggleProjectorMode()" title="Toggle Projector Fullscreen Mode"
+                    class="px-3 py-2 rounded-xl text-xs sm:text-sm font-bold bg-slate-800 hover:bg-slate-700 text-amber-400 border border-amber-500/30 transition flex items-center gap-1.5 shadow">
+                    <i class="fa-solid fa-expand"></i> Projector
+                </button>
+            </div>
+
+        </div>
+    </header>
+
+    <main class="max-w-7xl w-full mx-auto flex-1 flex flex-col gap-4">
+
+        <!-- ================= TAB 1: RACE TRACK ================= -->
+        <section id="tab-track" class="space-y-3">
+            
+            <!-- Toolbar for Controls -->
+            <div class="bg-slate-900/80 p-3 rounded-2xl border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+                
+                <!-- Search Filter -->
+                <div class="relative w-full sm:w-64">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                    <input type="text" id="track-search-input" oninput="renderRaceTrack()" placeholder="Search student name..." 
+                        class="w-full bg-slate-950 text-slate-200 pl-9 pr-3 py-2 rounded-xl border border-slate-800 focus:outline-none focus:border-blue-500">
+                </div>
+
+                <!-- Sort & View Controls -->
+                <div class="flex items-center gap-2 flex-wrap w-full sm:w-auto justify-end">
+                    <div class="flex items-center gap-1 bg-slate-950 px-2.5 py-1.5 rounded-xl border border-slate-800">
+                        <span class="text-slate-400 font-semibold"><i class="fa-solid fa-arrow-down-wide-short"></i> Sort:</span>
+                        <select id="sort-mode-select" onchange="renderRaceTrack()" class="bg-transparent text-amber-400 font-bold focus:outline-none">
+                            <option value="points-desc" class="bg-slate-900 text-white">Highest Points First</option>
+                            <option value="name-asc" class="bg-slate-900 text-white">Alphabetical (A-Z)</option>
+                            <option value="default" class="bg-slate-900 text-white" selected>Initial Roster Order</option>
+                        </select>
+                    </div>
+
+                    <div class="flex items-center gap-1 bg-slate-950 px-2 py-1.5 rounded-xl border border-slate-800">
+                        <span class="text-slate-400 font-semibold"><i class="fa-solid fa-up-down"></i> Height:</span>
+                        <button onclick="toggleLaneHeight('normal')" id="btn-lane-normal" class="px-2 py-0.5 rounded font-bold bg-blue-600 text-white">Normal</button>
+                        <button onclick="toggleLaneHeight('compact')" id="btn-lane-compact" class="px-2 py-0.5 rounded font-bold text-slate-400 hover:text-white">Compact</button>
+                    </div>
+
+                    <label class="flex items-center gap-1.5 bg-slate-950 px-2.5 py-1.5 rounded-xl border border-slate-800 cursor-pointer">
+                        <input type="checkbox" id="toggle-sound-fx" checked class="rounded accent-blue-500">
+                        <span class="text-slate-300 font-semibold"><i class="fa-solid fa-volume-high text-slate-400"></i> Sound</span>
+                    </label>
+
+                    <button onclick="triggerClassCheer()" class="px-3 py-1.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl font-bold hover:brightness-110 transition shadow flex items-center gap-1">
+                        <i class="fa-solid fa-bullhorn"></i> Cheer Class!
+                    </button>
+                </div>
+
+            </div>
+
+            <!-- Race Track Container -->
+            <div class="asphalt-track-bg border border-slate-800 rounded-2xl p-3 sm:p-5 shadow-2xl relative">
+                
+                <!-- Track Milestones Ruler (0 to 70 Points) -->
+                <div class="relative min-w-[840px] h-10 mb-3 bg-slate-950/90 rounded-xl border border-slate-800 flex items-center text-xs font-bold text-slate-400">
+                    <div class="absolute left-[30px] -translate-x-1/2 text-center text-emerald-400">
+                        <div class="text-[9px] uppercase tracking-wider">Start</div>
+                        <div>0 pts</div>
+                    </div>
+                    <div class="absolute left-[calc(30px+((10/70)*(100%-140px)))] -translate-x-1/2 text-center">10 pts</div>
+                    <div class="absolute left-[calc(30px+((20/70)*(100%-140px)))] -translate-x-1/2 text-center">20 pts</div>
+                    <div class="absolute left-[calc(30px+((30/70)*(100%-140px)))] -translate-x-1/2 text-center">30 pts</div>
+                    <div class="absolute left-[calc(30px+((40/70)*(100%-140px)))] -translate-x-1/2 text-center">40 pts</div>
+                    <div class="absolute left-[calc(30px+((50/70)*(100%-140px)))] -translate-x-1/2 text-center">50 pts</div>
+                    <div class="absolute left-[calc(30px+((60/70)*(100%-140px)))] -translate-x-1/2 text-center">60 pts</div>
+                    <div class="absolute right-[30px] translate-x-1/2 text-center text-amber-400 font-extrabold flex flex-col items-center">
+                        <span class="text-[9px] uppercase text-amber-300">Finish! 🏁</span>
+                        <span>70 pts</span>
+                    </div>
+                </div>
+
+                <!-- Lanes Scrollbox for 25 Students -->
+                <div id="track-lanes-scrollbox" class="overflow-x-auto max-h-[68vh] pr-1">
+                    <div id="race-lanes-container" class="min-w-[840px] space-y-2 relative">
+                        <!-- Dynamic Student Race Lanes Injected via JS -->
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ================= TAB 2: LEADERBOARD & PODIUM ================= -->
+        <section id="tab-podium" class="hidden space-y-6">
+            
+            <!-- Podium Top 3 Cards -->
+            <div id="podium-top3-grid" class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4">
+                <!-- Injected via JS -->
+            </div>
+
+            <!-- Complete 25-Student Ranking Table -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
+                <div class="p-4 bg-slate-950/70 border-b border-slate-800 flex items-center justify-between">
+                    <h3 class="font-extrabold text-lg text-amber-400 flex items-center gap-2">
+                        <i class="fa-solid fa-list-ol"></i> AR Reading Overall Standings
+                    </h3>
+                    <span class="text-xs text-slate-400">Classroom Roster Ranked by Points</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-950 text-xs text-slate-400 uppercase font-bold tracking-wider">
+                            <tr>
+                                <th class="p-4">Rank</th>
+                                <th class="p-4">Student</th>
+                                <th class="p-4 text-center">AR Points</th>
+                                <th class="p-4">Progress to Goal (70 pts)</th>
+                                <th class="p-4 text-right">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboard-table-body" class="divide-y divide-slate-800">
+                            <!-- Injected via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= TAB 3: TEACHER CONTROL PANEL ================= -->
+        <section id="tab-admin" class="hidden space-y-6">
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                <!-- Left Admin Forms & Batch Controls -->
+                <div class="space-y-6">
+                    
+                    <!-- Add Student Form -->
+                    <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl">
+                        <h3 class="font-extrabold text-lg text-blue-400 mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-user-plus"></i> Register New Student
+                        </h3>
+                        <form id="add-student-form" onsubmit="handleAddStudent(event)" class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-300 mb-1">Student Name</label>
+                                <input type="text" id="new-student-name" required placeholder="e.g. Lucas Miller" 
+                                    class="w-full bg-slate-950 text-white rounded-xl p-2.5 border border-slate-800 focus:border-blue-500 focus:outline-none text-sm">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-xs font-bold text-slate-300 mb-1">Initial AR Points</label>
+                                <input type="number" id="new-student-points" min="0" step="0.1" value="0" required
+                                    class="w-full bg-slate-950 text-white rounded-xl p-2.5 border border-slate-800 focus:border-blue-500 focus:outline-none text-sm">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-slate-300 mb-1">Car Color</label>
+                                <div id="add-color-picker-grid" class="grid grid-cols-5 gap-2 pt-1">
+                                    <!-- Injected via JS -->
+                                </div>
+                                <input type="hidden" id="selected-car-color" value="#ef4444">
+                            </div>
+
+                            <button type="submit" class="w-full py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold shadow-lg hover:brightness-110 transition flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-car-side"></i> Add Student to Track
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Batch Controls & Roster Reset -->
+                    <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-3">
+                        <h3 class="font-extrabold text-base text-amber-400 flex items-center gap-2">
+                            <i class="fa-solid fa-sliders"></i> Class Roster Management
+                        </h3>
+                        <div class="grid grid-cols-1 gap-2">
+                            <button onclick="confirmLoadDefaultRoster()" class="w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 border border-slate-700">
+                                <i class="fa-solid fa-rotate"></i> Restore Default 25 Roster & Scores
+                            </button>
+                            <button onclick="confirmResetPoints()" class="w-full py-2 bg-amber-600/20 hover:bg-amber-600/30 text-amber-400 border border-amber-500/30 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-arrow-rotate-left"></i> Reset All Points to 0
+                            </button>
+                            <button onclick="confirmClearAll()" class="w-full py-2 bg-rose-600/20 hover:bg-rose-600/30 text-rose-400 border border-rose-500/30 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-trash-can"></i> Clear All Students
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Student Management List -->
+                <div class="lg:col-span-2 bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4 pb-3 border-b border-slate-800">
+                        <div>
+                            <h3 class="font-extrabold text-lg text-white flex items-center gap-2">
+                                <i class="fa-solid fa-list-check"></i> Individual Point Adjuster
+                            </h3>
+                            <p class="text-xs text-slate-400">Quickly add or subtract points for each student</p>
+                        </div>
+                        <input type="text" id="admin-search-input" oninput="renderAdminStudentList()" placeholder="Filter by name..." 
+                            class="bg-slate-950 text-xs text-white px-3 py-2 rounded-xl border border-slate-800 focus:outline-none w-full sm:w-52">
+                    </div>
+
+                    <div id="admin-student-list" class="space-y-2.5 overflow-y-auto max-h-[580px] pr-1">
+                        <!-- Injected via JS -->
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- VICTORY CELEBRATION MODAL -->
+    <div id="victory-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-gradient-to-b from-slate-900 to-slate-950 border-2 border-amber-400 rounded-3xl p-6 sm:p-8 max-w-md w-full text-center shadow-2xl relative">
+            <div class="text-6xl mb-3 animate-bounce">🏆</div>
+            <h2 class="text-3xl font-extrabold text-amber-400 mb-1">GOAL REACHED!</h2>
+            <p class="text-slate-300 text-sm mb-4">A star reader crossed the 70 AR Points finish line!</p>
+            
+            <div class="bg-slate-950/90 p-4 rounded-2xl border border-amber-500/30 mb-6">
+                <span id="victory-student-name" class="text-2xl font-black text-white block mb-1">Student Name</span>
+                <span id="victory-student-pts" class="text-emerald-400 text-xl font-black">70 AR Points</span>
+            </div>
+
+            <button onclick="closeVictoryModal()" class="w-full py-3.5 bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 text-white rounded-2xl font-black text-base shadow-xl hover:brightness-110 transition">
+                Celebrate & Keep Reading! 🎉
+            </button>
+        </div>
+    </div>
+
+    <!-- EDIT STUDENT MODAL -->
+    <div id="edit-student-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-md w-full shadow-2xl">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-lg text-white">Edit Student Profile</h3>
+                <button onclick="closeEditModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            
+            <form id="edit-student-form" onsubmit="handleSaveEditStudent(event)" class="space-y-4">
+                <input type="hidden" id="edit-student-id">
+                
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Student Name</label>
+                    <input type="text" id="edit-student-name" required class="w-full bg-slate-950 text-white rounded-xl p-2.5 border border-slate-800 text-sm">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Current AR Points</label>
+                    <input type="number" id="edit-student-points" step="0.1" min="0" required class="w-full bg-slate-950 text-white rounded-xl p-2.5 border border-slate-800 text-sm">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Car Color</label>
+                    <div id="edit-color-picker-grid" class="grid grid-cols-5 gap-2 pt-1">
+                        <!-- Injected via JS -->
+                    </div>
+                    <input type="hidden" id="edit-selected-car-color">
+                </div>
+
+                <div class="flex gap-3 pt-2">
+                    <button type="button" onclick="closeEditModal()" class="w-1/2 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-sm font-bold transition">
+                        Cancel
+                    </button>
+                    <button type="submit" class="w-1/2 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-bold transition">
+                        Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- CUSTOM CONFIRMATION MODAL -->
+    <div id="confirm-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-sm w-full text-center shadow-2xl">
+            <div id="confirm-modal-icon" class="text-4xl text-amber-400 mb-2">⚠️</div>
+            <h3 id="confirm-modal-title" class="font-bold text-lg text-white mb-2">Are you sure?</h3>
+            <p id="confirm-modal-msg" class="text-xs text-slate-300 mb-6">This action cannot be undone.</p>
+            <div class="flex gap-3">
+                <button onclick="closeConfirmModal(false)" class="w-1/2 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold transition">
+                    Cancel
+                </button>
+                <button onclick="closeConfirmModal(true)" class="w-1/2 py-2 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold transition">
+                    Confirm
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* ==========================================================================
+           1. EXACT INITIAL DATASET (25 STUDENTS & SCORES)
+           ========================================================================== */
+        const TARGET_POINTS = 70;
+        const STORAGE_KEY = 'ar_race_exact_25_roster_v3';
+
+        const CAR_COLORS = [
+            { name: 'Red Rocket', hex: '#ef4444' },
+            { name: 'Blue Lightning', hex: '#3b82f6' },
+            { name: 'Emerald Speed', hex: '#10b981' },
+            { name: 'Amber Flash', hex: '#f59e0b' },
+            { name: 'Purple Comet', hex: '#8b5cf6' },
+            { name: 'Neon Pink', hex: '#ec4899' },
+            { name: 'Flame Orange', hex: '#f97316' },
+            { name: 'Cyan Turbo', hex: '#06b6d4' },
+            { name: 'Gold Champion', hex: '#eab308' },
+            { name: 'Lime Racer', hex: '#84cc16' }
+        ];
+
+        // Exact list provided by user
+        const EXACT_INITIAL_STUDENTS = [
+            { id: '1', name: 'ANA LUCIA', points: 6.4, color: '#ef4444', celebrated: false },
+            { id: '2', name: 'JOSE LUIS', points: 4.0, color: '#3b82f6', celebrated: false },
+            { id: '3', name: 'DANIEL', points: 41.5, color: '#10b981', celebrated: false },
+            { id: '4', name: 'MIRANDA', points: 2.5, color: '#f59e0b', celebrated: false },
+            { id: '5', name: 'CARLOS M', points: 2.4, color: '#8b5cf6', celebrated: false },
+            { id: '6', name: 'JOAQUIN', points: 16.4, color: '#ec4899', celebrated: false },
+            { id: '7', name: 'ISABELLA', points: 17.9, color: '#f97316', celebrated: false },
+            { id: '8', name: 'ÁLVAR', points: 5.5, color: '#06b6d4', celebrated: false },
+            { id: '9', name: 'SANTINO', points: 0.5, color: '#84cc16', celebrated: false },
+            { id: '10', name: 'SAMUEL', points: 22.3, color: '#eab308', celebrated: false },
+            { id: '11', name: 'MADISON', points: 7.4, color: '#3b82f6', celebrated: false },
+            { id: '12', name: 'ALEJANDRO', points: 4.3, color: '#10b981', celebrated: false },
+            { id: '13', name: 'IVANNA', points: 15.5, color: '#ec4899', celebrated: false },
+            { id: '14', name: 'CESAR EDUARDO', points: 2.1, color: '#f97316', celebrated: false },
+            { id: '15', name: 'JIAJIE', points: 25.2, color: '#8b5cf6', celebrated: false },
+            { id: '16', name: 'SERGIO', points: 12.1, color: '#06b6d4', celebrated: false },
+            { id: '17', name: 'CESAR ABDIEL', points: 33.6, color: '#f59e0b', celebrated: false },
+            { id: '18', name: 'REGINA M', points: 12.2, color: '#ef4444', celebrated: false },
+            { id: '19', name: 'REGINA N', points: 0.0, color: '#84cc16', celebrated: false },
+            { id: '20', name: 'REGINA O', points: 14.4, color: '#eab308', celebrated: false },
+            { id: '21', name: 'HELENA', points: 9.5, color: '#ec4899', celebrated: false },
+            { id: '22', name: 'RENATA', points: 16.0, color: '#3b82f6', celebrated: false },
+            { id: '23', name: 'RODOLFO', points: 0.0, color: '#10b981', celebrated: false },
+            { id: '24', name: 'SOPHIA', points: 0.8, color: '#f97316', celebrated: false },
+            { id: '25', name: 'ALLISON', points: 4.4, color: '#06b6d4', celebrated: false }
+        ];
+
+        let students = [];
+        let currentLaneHeightMode = 'normal'; // 'normal' or 'compact'
+        let pendingConfirmCallback = null;
+
+        /* ==========================================================================
+           2. APP INITIALIZATION & LOCALSTORAGE
+           ========================================================================== */
+        window.addEventListener('DOMContentLoaded', () => {
+            loadStudents();
+            renderColorPickers();
+            updateAllViews();
+        });
+
+        function loadStudents() {
+            const stored = localStorage.getItem(STORAGE_KEY);
+            if (stored) {
+                try {
+                    students = JSON.parse(stored);
+                } catch (e) {
+                    students = JSON.parse(JSON.stringify(EXACT_INITIAL_STUDENTS));
+                }
+            } else {
+                students = JSON.parse(JSON.stringify(EXACT_INITIAL_STUDENTS));
+                saveStudents();
+            }
+        }
+
+        function saveStudents() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(students));
+        }
+
+        /* ==========================================================================
+           3. SOUND EFFECTS ENGINE (Web Audio API)
+           ========================================================================== */
+        function playSound(type) {
+            const enabled = document.getElementById('toggle-sound-fx')?.checked;
+            if (!enabled) return;
+
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                
+                if (type === 'add') {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.frequency.setValueAtTime(400, ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.12);
+                    gain.gain.setValueAtTime(0.2, ctx.currentTime);
+                    gain.gain.linearRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.15);
+                } else if (type === 'victory') {
+                    [261.63, 329.63, 392.00, 523.25, 659.25].forEach((freq, idx) => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.frequency.value = freq;
+                        const startTime = ctx.currentTime + (idx * 0.1);
+                        gain.gain.setValueAtTime(0.2, startTime);
+                        gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.4);
+                        osc.start(startTime);
+                        osc.stop(startTime + 0.4);
+                    });
+                }
+            } catch (e) {}
+        }
+
+        /* ==========================================================================
+           4. VIEW SWITCHING & FULLSCREEN PROJECTOR
+           ========================================================================== */
+        function switchTab(tab) {
+            document.getElementById('tab-track').classList.add('hidden');
+            document.getElementById('tab-podium').classList.add('hidden');
+            document.getElementById('tab-admin').classList.add('hidden');
+
+            document.getElementById('btn-tab-track').className = "px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 text-slate-400 hover:text-white hover:bg-slate-800";
+            document.getElementById('btn-tab-podium').className = "px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 text-slate-400 hover:text-white hover:bg-slate-800";
+            document.getElementById('btn-tab-admin').className = "px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 text-slate-400 hover:text-white hover:bg-slate-800";
+
+            if (tab === 'track') {
+                document.getElementById('tab-track').classList.remove('hidden');
+                document.getElementById('btn-tab-track').className = "px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md";
+                renderRaceTrack();
+            } else if (tab === 'podium') {
+                document.getElementById('tab-podium').classList.remove('hidden');
+                document.getElementById('btn-tab-podium').className = "px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md";
+                renderPodium();
+            } else if (tab === 'admin') {
+                document.getElementById('tab-admin').classList.remove('hidden');
+                document.getElementById('btn-tab-admin').className = "px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md";
+                renderAdminStudentList();
+            }
+        }
+
+        function toggleProjectorMode() {
+            const header = document.getElementById('main-header');
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(()=>{});
+                header.classList.add('hidden');
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+                header.classList.remove('hidden');
+            }
+        }
+
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement) {
+                document.getElementById('main-header').classList.remove('hidden');
+            }
+        });
+
+        function toggleLaneHeight(mode) {
+            currentLaneHeightMode = mode;
+            document.getElementById('btn-lane-normal').className = mode === 'normal' 
+                ? "px-2 py-0.5 rounded font-bold bg-blue-600 text-white" 
+                : "px-2 py-0.5 rounded font-bold text-slate-400 hover:text-white";
+            document.getElementById('btn-lane-compact').className = mode === 'compact' 
+                ? "px-2 py-0.5 rounded font-bold bg-blue-600 text-white" 
+                : "px-2 py-0.5 rounded font-bold text-slate-400 hover:text-white";
+            
+            renderRaceTrack();
+        }
+
+        function updateAllViews() {
+            renderHeaderStats();
+            renderRaceTrack();
+            renderPodium();
+            renderAdminStudentList();
+        }
+
+        function renderHeaderStats() {
+            document.getElementById('stat-students-count').innerText = students.length;
+            const total = students.reduce((sum, s) => sum + s.points, 0);
+            document.getElementById('stat-total-points').innerText = total.toFixed(1);
+            const winners = students.filter(s => s.points >= TARGET_POINTS).length;
+            document.getElementById('stat-winners-count').innerText = `${winners} 🏆`;
+        }
+
+        /* ==========================================================================
+           5. RACE CAR VECTOR SVG GENERATOR
+           ========================================================================== */
+        function getCarSVG(colorHex, compactMode = false) {
+            const width = compactMode ? 54 : 64;
+            const height = compactMode ? 24 : 28;
+
+            return `
+            <svg width="${width}" height="${height}" viewBox="0 0 100 48" fill="none" xmlns="http://www.w3.org/2000/svg" class="drop-shadow-md">
+                <!-- Spoiler Wing -->
+                <path d="M 4 12 L 18 12 L 14 22 L 4 22 Z" fill="#0f172a"/>
+                <path d="M 7 8 L 16 8 L 16 12 L 7 12 Z" fill="${colorHex}"/>
+                
+                <!-- Main Body -->
+                <path d="M 12 22 C 20 14, 38 10, 62 10 C 78 10, 88 18, 96 26 C 98 30, 95 36, 88 36 L 12 36 Z" fill="${colorHex}"/>
+                
+                <!-- Windshield & Cockpit -->
+                <path d="M 34 12 C 44 4, 62 4, 72 12 C 64 14, 42 14, 34 12 Z" fill="#020617" opacity="0.85"/>
+                <path d="M 54 12 C 60 6, 70 6, 74 14 L 54 14 Z" fill="#38bdf8" opacity="0.9"/>
+                
+                <!-- Side Accent Stripe -->
+                <path d="M 14 26 L 90 26 L 88 30 L 14 30 Z" fill="#ffffff" opacity="0.4"/>
+                
+                <!-- Wheels & Rims -->
+                <circle cx="26" cy="36" r="9" fill="#0f172a"/>
+                <circle cx="26" cy="36" r="5" fill="#94a3b8"/>
+                <circle cx="26" cy="36" r="2" fill="#ffffff"/>
+                
+                <circle cx="78" cy="36" r="9" fill="#0f172a"/>
+                <circle cx="78" cy="36" r="5" fill="#94a3b8"/>
+                <circle cx="78" cy="36" r="2" fill="#ffffff"/>
+            </svg>
+            `;
+        }
+
+        /* ==========================================================================
+           6. RENDER RACE TRACK (CAR DEDICATED DIRECTLY ABOVE NAME)
+           ========================================================================== */
+        function renderRaceTrack() {
+            const container = document.getElementById('race-lanes-container');
+            const searchVal = (document.getElementById('track-search-input')?.value || '').toLowerCase();
+            const sortMode = document.getElementById('sort-mode-select')?.value || 'default';
+
+            // Filter
+            let filtered = students.filter(s => s.name.toLowerCase().includes(searchVal));
+
+            // Sort
+            if (sortMode === 'points-desc') {
+                filtered.sort((a, b) => b.points - a.points);
+            } else if (sortMode === 'name-asc') {
+                filtered.sort((a, b) => a.name.localeCompare(b.name));
+            }
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-12 text-slate-400 bg-slate-950/60 rounded-2xl border border-slate-800">
+                        <i class="fa-solid fa-car-tunnel text-4xl mb-2 text-slate-600 block"></i>
+                        No students found matching your search.
+                    </div>
+                `;
+                return;
+            }
+
+            const isCompact = currentLaneHeightMode === 'compact';
+
+            container.innerHTML = filtered.map((student) => {
+                const percentage = Math.min(100, Math.max(0, (student.points / TARGET_POINTS) * 100));
+                const isWinner = student.points >= TARGET_POINTS;
+
+                // Left offset formula ensures proper margin from start to finish
+                const calcLeft = `calc(15px + (${percentage} / 100 * (100% - 140px)))`;
+
+                return `
+                <div class="race-lane ${isCompact ? 'race-lane-compact' : ''} rounded-xl flex items-center px-3 border border-slate-800 ${isWinner ? 'finish-glow' : ''}">
+                    
+                    <!-- Start Line -->
+                    <div class="absolute left-0 top-0 bottom-0 w-7 checkered-pattern opacity-25 border-r border-slate-700 pointer-events-none"></div>
+
+                    <!-- Dashed Milestone Grid Lines -->
+                    <div class="absolute inset-0 pointer-events-none flex justify-between px-[30px]">
+                        <div class="h-full border-r border-dashed border-slate-700/30"></div>
+                        <div class="h-full border-r border-dashed border-slate-700/20"></div>
+                        <div class="h-full border-r border-dashed border-slate-700/20"></div>
+                        <div class="h-full border-r border-dashed border-slate-700/20"></div>
+                        <div class="h-full border-r border-dashed border-slate-700/20"></div>
+                        <div class="h-full border-r border-dashed border-slate-700/20"></div>
+                        <div class="h-full border-r border-dashed border-slate-700/20"></div>
+                    </div>
+
+                    <!-- Finish Checkered Line -->
+                    <div class="absolute right-0 top-0 bottom-0 w-9 checkered-pattern border-l-2 border-emerald-400 flex items-center justify-center pointer-events-none">
+                        ${isWinner ? '<span class="text-sm animate-bounce">🏆</span>' : '<span class="text-[10px] font-bold text-black bg-white/90 px-1 rounded">70</span>'}
+                    </div>
+
+                    <!-- Car Unit (CAR PLACED DIRECTLY ABOVE NAME BADGE) -->
+                    <div class="car-unit car-vibe group cursor-pointer" 
+                         style="left: ${calcLeft};"
+                         onclick="quickAddPoints('${student.id}', 1)"
+                         title="Click to give +1 point to ${student.name}">
+                        
+                        <!-- Top: SVG Race Car -->
+                        <div class="transform group-hover:scale-110 transition flex justify-center mb-0.5">
+                            ${getCarSVG(student.color, isCompact)}
+                        </div>
+
+                        <!-- Bottom: Student Name & Points Badge -->
+                        <div class="bg-slate-950/95 border border-slate-700 group-hover:border-amber-400 text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full shadow-lg whitespace-nowrap flex items-center gap-1.5">
+                            <span class="truncate max-w-[100px]">${student.name}</span>
+                            <span class="${isWinner ? 'text-amber-400 font-extrabold' : 'text-emerald-400'} bg-slate-900 px-1.5 py-0.2 rounded-md text-[10px]">
+                                ${student.points} pts
+                            </span>
+                            ${isWinner ? '<i class="fa-solid fa-crown text-amber-400 text-[10px]"></i>' : ''}
+                        </div>
+
+                    </div>
+
+                </div>
+                `;
+            }).join('');
+        }
+
+        /* ==========================================================================
+           7. RENDER PODIUM & LEADERBOARD TABLE
+           ========================================================================== */
+        function renderPodium() {
+            const sorted = [...students].sort((a, b) => b.points - a.points);
+            
+            const top1 = sorted[0];
+            const top2 = sorted[1];
+            const top3 = sorted[2];
+
+            const grid = document.getElementById('podium-top3-grid');
+            grid.innerHTML = `
+                <!-- 2nd Place -->
+                <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex flex-col items-center text-center shadow-lg relative order-2 md:order-1 mt-4 md:mt-6">
+                    <div class="w-10 h-10 rounded-full bg-slate-300 text-slate-950 font-black text-lg flex items-center justify-center mb-2 shadow">2</div>
+                    <div class="text-3xl mb-1">🏎️</div>
+                    <div class="font-bold text-white text-base">${top2 ? top2.name : '---'}</div>
+                    <div class="text-emerald-400 font-extrabold text-lg">${top2 ? `${top2.points} pts` : '0 pts'}</div>
+                    <div class="text-xs text-slate-400 mt-1">${top2 ? `${Math.min(100, Math.round((top2.points/70)*100))}% of goal` : ''}</div>
+                </div>
+
+                <!-- 1st Place Champion -->
+                <div class="bg-gradient-to-b from-amber-500/20 to-slate-900 border-2 border-amber-400 rounded-2xl p-5 flex flex-col items-center text-center shadow-2xl relative order-1 md:order-2 champion-badge">
+                    <div class="absolute -top-3 bg-amber-400 text-slate-950 px-3 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider flex items-center gap-1">
+                        <i class="fa-solid fa-crown"></i> Reading Leader
+                    </div>
+                    <div class="w-12 h-12 rounded-full bg-amber-400 text-slate-950 font-black text-xl flex items-center justify-center mb-2 shadow-lg mt-1">1</div>
+                    <div class="text-4xl mb-1">🏆</div>
+                    <div class="font-extrabold text-amber-300 text-lg">${top1 ? top1.name : '---'}</div>
+                    <div class="text-emerald-400 font-black text-2xl">${top1 ? `${top1.points} pts` : '0 pts'}</div>
+                    <div class="text-xs text-amber-200/80 mt-1 font-semibold">${top1 ? `${Math.min(100, Math.round((top1.points/70)*100))}% of goal` : ''}</div>
+                </div>
+
+                <!-- 3rd Place -->
+                <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex flex-col items-center text-center shadow-lg relative order-3 mt-4 md:mt-8">
+                    <div class="w-10 h-10 rounded-full bg-amber-700 text-amber-100 font-black text-lg flex items-center justify-center mb-2 shadow">3</div>
+                    <div class="text-3xl mb-1">🏎️</div>
+                    <div class="font-bold text-white text-base">${top3 ? top3.name : '---'}</div>
+                    <div class="text-emerald-400 font-extrabold text-lg">${top3 ? `${top3.points} pts` : '0 pts'}</div>
+                    <div class="text-xs text-slate-400 mt-1">${top3 ? `${Math.min(100, Math.round((top3.points/70)*100))}% of goal` : ''}</div>
+                </div>
+            `;
+
+            const tbody = document.getElementById('leaderboard-table-body');
+            tbody.innerHTML = sorted.map((student, rank) => {
+                const pct = Math.min(100, Math.round((student.points / TARGET_POINTS) * 100));
+                const isWinner = student.points >= TARGET_POINTS;
+
+                return `
+                    <tr class="hover:bg-slate-800/40 transition">
+                        <td class="p-3.5 font-bold text-slate-400">
+                            ${rank === 0 ? '🥇 1' : rank === 1 ? '🥈 2' : rank === 2 ? '🥉 3' : `#${rank + 1}`}
+                        </td>
+                        <td class="p-3.5">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-3.5 h-3.5 rounded-full border border-white/20" style="background-color: ${student.color};"></div>
+                                <span class="font-bold text-white text-sm">${student.name}</span>
+                            </div>
+                        </td>
+                        <td class="p-3.5 text-center font-extrabold text-emerald-400 text-base">
+                            ${student.points}
+                        </td>
+                        <td class="p-3.5">
+                            <div class="w-full bg-slate-950 rounded-full h-2.5 border border-slate-800 overflow-hidden relative">
+                                <div class="bg-gradient-to-r from-blue-500 to-emerald-400 h-full rounded-full transition-all duration-500" style="width: ${pct}%;"></div>
+                            </div>
+                            <span class="text-[10px] text-slate-400 mt-0.5 block">${pct}% completed</span>
+                        </td>
+                        <td class="p-3.5 text-right">
+                            ${isWinner ? 
+                                `<span class="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2.5 py-1 rounded-full text-xs font-bold">Goal Finished! 🏆</span>` : 
+                                `<span class="text-slate-400 text-xs">${(TARGET_POINTS - student.points).toFixed(1)} pts remaining</span>`
+                            }
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        /* ==========================================================================
+           8. RENDER TEACHER ADMIN LIST & CONTROLS
+           ========================================================================== */
+        function renderAdminStudentList() {
+            const container = document.getElementById('admin-student-list');
+            const searchVal = (document.getElementById('admin-search-input')?.value || '').toLowerCase();
+
+            const filtered = students.filter(s => s.name.toLowerCase().includes(searchVal));
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 text-slate-400">
+                        No students found.
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = filtered.map(student => {
+                return `
+                <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 hover:border-slate-700 transition">
+                    
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-4 h-4 rounded-full border border-white/20 flex-shrink-0" style="background-color: ${student.color}"></div>
+                        <div>
+                            <h4 class="font-bold text-white text-sm">${student.name}</h4>
+                            <span class="text-xs text-emerald-400 font-extrabold">${student.points} pts</span>
+                            <span class="text-[10px] text-slate-400 ml-1.5">(${Math.min(100, Math.round((student.points/70)*100))}%)</span>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-1.5 flex-wrap w-full sm:w-auto justify-end text-xs">
+                        <button onclick="quickAddPoints('${student.id}', -1)" title="-1 Point" 
+                            class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-lg font-bold transition">
+                            -1
+                        </button>
+                        <button onclick="quickAddPoints('${student.id}', 0.5)" title="+0.5 Point" 
+                            class="px-2 py-1 bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-300 border border-emerald-500/30 rounded-lg font-bold transition">
+                            +0.5
+                        </button>
+                        <button onclick="quickAddPoints('${student.id}', 1)" title="+1 Point" 
+                            class="px-2.5 py-1 bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-300 border border-emerald-500/40 rounded-lg font-bold transition">
+                            +1
+                        </button>
+                        <button onclick="quickAddPoints('${student.id}', 5)" title="+5 Points" 
+                            class="px-2.5 py-1 bg-blue-600/30 hover:bg-blue-600/50 text-blue-300 border border-blue-500/40 rounded-lg font-bold transition">
+                            +5
+                        </button>
+
+                        <div class="h-4 w-px bg-slate-800 mx-1"></div>
+
+                        <button onclick="openEditModal('${student.id}')" title="Edit" 
+                            class="p-1.5 bg-slate-800 hover:bg-slate-700 text-amber-400 rounded-lg transition">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
+                        <button onclick="deleteStudent('${student.id}')" title="Delete" 
+                            class="p-1.5 bg-slate-800 hover:bg-rose-900/50 text-rose-400 rounded-lg transition">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+
+                </div>
+                `;
+            }).join('');
+        }
+
+        function renderColorPickers() {
+            const addGrid = document.getElementById('add-color-picker-grid');
+            const editGrid = document.getElementById('edit-color-picker-grid');
+
+            const colorHTML = CAR_COLORS.map((c, i) => `
+                <button type="button" onclick="selectCarColor('${c.hex}', 'add', this)" 
+                    class="w-full h-7 rounded-lg border-2 border-transparent hover:scale-105 transition shadow-sm ${i === 0 ? 'ring-2 ring-white border-white' : ''}" 
+                    style="background-color: ${c.hex};" title="${c.name}"></button>
+            `).join('');
+
+            if (addGrid) addGrid.innerHTML = colorHTML;
+
+            const editColorHTML = CAR_COLORS.map((c) => `
+                <button type="button" onclick="selectCarColor('${c.hex}', 'edit', this)" 
+                    class="w-full h-7 rounded-lg border-2 border-transparent hover:scale-105 transition shadow-sm" 
+                    style="background-color: ${c.hex};" title="${c.name}"></button>
+            `).join('');
+
+            if (editGrid) editGrid.innerHTML = editColorHTML;
+        }
+
+        function selectCarColor(hex, mode, btnElement) {
+            if (mode === 'add') {
+                document.getElementById('selected-car-color').value = hex;
+                const siblings = document.getElementById('add-color-picker-grid').children;
+                for (let s of siblings) s.className = s.className.replace('ring-2 ring-white border-white', '');
+                btnElement.className += ' ring-2 ring-white border-white';
+            } else {
+                document.getElementById('edit-selected-car-color').value = hex;
+                const siblings = document.getElementById('edit-color-picker-grid').children;
+                for (let s of siblings) s.className = s.className.replace('ring-2 ring-white border-white', '');
+                btnElement.className += ' ring-2 ring-white border-white';
+            }
+        }
+
+        /* ==========================================================================
+           9. STUDENT CRUD LOGIC & QUICK INCREMENTS
+           ========================================================================== */
+        function handleAddStudent(e) {
+            e.preventDefault();
+            const name = document.getElementById('new-student-name').value.trim();
+            const points = parseFloat(document.getElementById('new-student-points').value) || 0;
+            const color = document.getElementById('selected-car-color').value || CAR_COLORS[0].hex;
+
+            if (!name) return;
+
+            const newStudent = {
+                id: Date.now().toString(),
+                name,
+                points,
+                color,
+                celebrated: points >= TARGET_POINTS
+            };
+
+            students.push(newStudent);
+            saveStudents();
+            updateAllViews();
+
+            playSound('add');
+
+            document.getElementById('new-student-name').value = '';
+            document.getElementById('new-student-points').value = '0';
+
+            if (points >= TARGET_POINTS) {
+                triggerVictoryModal(newStudent);
+            }
+        }
+
+        function quickAddPoints(id, delta) {
+            const student = students.find(s => s.id === id);
+            if (!student) return;
+
+            const oldPoints = student.points;
+            student.points = Math.max(0, parseFloat((student.points + delta).toFixed(2)));
+
+            saveStudents();
+            updateAllViews();
+
+            playSound('add');
+
+            if (student.points >= TARGET_POINTS && oldPoints < TARGET_POINTS && !student.celebrated) {
+                student.celebrated = true;
+                saveStudents();
+                triggerVictoryModal(student);
+            }
+        }
+
+        function deleteStudent(id) {
+            const student = students.find(s => s.id === id);
+            if (!student) return;
+
+            showCustomConfirm(
+                'Delete Student?',
+                `Are you sure you want to remove "${student.name}" from the race track?`,
+                () => {
+                    students = students.filter(s => s.id !== id);
+                    saveStudents();
+                    updateAllViews();
+                }
+            );
+        }
+
+        /* Edit Modal */
+        function openEditModal(id) {
+            const student = students.find(s => s.id === id);
+            if (!student) return;
+
+            document.getElementById('edit-student-id').value = student.id;
+            document.getElementById('edit-student-name').value = student.name;
+            document.getElementById('edit-student-points').value = student.points;
+            document.getElementById('edit-selected-car-color').value = student.color;
+
+            document.getElementById('edit-student-modal').classList.remove('hidden');
+        }
+
+        function closeEditModal() {
+            document.getElementById('edit-student-modal').classList.add('hidden');
+        }
+
+        function handleSaveEditStudent(e) {
+            e.preventDefault();
+            const id = document.getElementById('edit-student-id').value;
+            const student = students.find(s => s.id === id);
+            if (!student) return;
+
+            student.name = document.getElementById('edit-student-name').value.trim();
+            student.points = parseFloat(document.getElementById('edit-student-points').value) || 0;
+            student.color = document.getElementById('edit-selected-car-color').value;
+
+            saveStudents();
+            updateAllViews();
+            closeEditModal();
+
+            if (student.points >= TARGET_POINTS && !student.celebrated) {
+                student.celebrated = true;
+                saveStudents();
+                triggerVictoryModal(student);
+            }
+        }
+
+        /* Maintenance functions */
+        function confirmLoadDefaultRoster() {
+            showCustomConfirm(
+                'Restore Default 25 Roster?',
+                'This will restore the original 25 students and their exact initial scores.',
+                () => {
+                    students = JSON.parse(JSON.stringify(EXACT_INITIAL_STUDENTS));
+                    saveStudents();
+                    updateAllViews();
+                }
+            );
+        }
+
+        function confirmResetPoints() {
+            showCustomConfirm(
+                'Reset All Points?',
+                'Are you sure you want to reset all students\' points back to 0?',
+                () => {
+                    students.forEach(s => {
+                        s.points = 0;
+                        s.celebrated = false;
+                    });
+                    saveStudents();
+                    updateAllViews();
+                }
+            );
+        }
+
+        function confirmClearAll() {
+            showCustomConfirm(
+                'Clear Entire Class?',
+                'Are you sure you want to delete all students from the track?',
+                () => {
+                    students = [];
+                    saveStudents();
+                    updateAllViews();
+                }
+            );
+        }
+
+        /* Custom Confirmation Modal Logic */
+        function showCustomConfirm(title, message, onConfirm) {
+            document.getElementById('confirm-modal-title').innerText = title;
+            document.getElementById('confirm-modal-msg').innerText = message;
+            pendingConfirmCallback = onConfirm;
+            document.getElementById('confirm-modal').classList.remove('hidden');
+        }
+
+        function closeConfirmModal(result) {
+            document.getElementById('confirm-modal').classList.add('hidden');
+            if (result && typeof pendingConfirmCallback === 'function') {
+                pendingConfirmCallback();
+            }
+            pendingConfirmCallback = null;
+        }
+
+        /* ==========================================================================
+           10. CELEBRATION & CONFETTI ENGINE
+           ========================================================================== */
+        function triggerVictoryModal(student) {
+            document.getElementById('victory-student-name').innerText = student.name;
+            document.getElementById('victory-student-pts').innerText = `${student.points} AR Points`;
+            document.getElementById('victory-modal').classList.remove('hidden');
+
+            playSound('victory');
+            fireConfetti();
+        }
+
+        function closeVictoryModal() {
+            document.getElementById('victory-modal').classList.add('hidden');
+        }
+
+        function triggerClassCheer() {
+            playSound('victory');
+            fireConfetti();
+        }
+
+        function fireConfetti() {
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 140,
+                    spread: 90,
+                    origin: { y: 0.6 }
+                });
+
+                setTimeout(() => {
+                    confetti({
+                        particleCount: 70,
+                        angle: 60,
+                        spread: 60,
+                        origin: { x: 0 }
+                    });
+                    confetti({
+                        particleCount: 70,
+                        angle: 120,
+                        spread: 60,
+                        origin: { x: 1 }
+                    });
+                }, 200);
+            }
+        }
+    </script>
+</body>
+</html>
